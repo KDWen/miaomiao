@@ -4,80 +4,21 @@
       <div class="city_hot">
         <h2>热门城市</h2>
         <ul class="clearfix">
-          <li>上海</li>
-          <li>北京</li>
-          <li>上海</li>
-          <li>北京</li>
-          <li>上海</li>
-          <li>北京</li>
-          <li>上海</li>
-          <li>北京</li>
+          <li v-for="item in hotList" :key="item.cityId">{{item.name}}</li>
         </ul>
       </div>
-      <div class="city_sort">
-        <div>
-          <h2>A</h2>
+      <div class="city_sort" ref="city_sort">
+        <div v-for="item in cityList" :key="item.index">
+          <h2>{{item.index}}</h2>
           <ul>
-            <li>阿拉善盟</li>
-            <li>鞍山</li>
-            <li>安庆</li>
-            <li>安阳</li>
+            <li v-for="data in item.list" :key="data.cityId">{{data.name}}</li>
           </ul>
         </div>
-        <div>
-          <h2>B</h2>
-          <ul>
-            <li>北京</li>
-            <li>保定</li>
-            <li>蚌埠</li>
-            <li>包头</li>
-          </ul>
-        </div>
-        <div>
-          <h2>A</h2>
-          <ul>
-            <li>阿拉善盟</li>
-            <li>鞍山</li>
-            <li>安庆</li>
-            <li>安阳</li>
-          </ul>
-        </div>
-        <div>
-          <h2>B</h2>
-          <ul>
-            <li>北京</li>
-            <li>保定</li>
-            <li>蚌埠</li>
-            <li>包头</li>
-          </ul>
-        </div>
-        <div>
-          <h2>A</h2>
-          <ul>
-            <li>阿拉善盟</li>
-            <li>鞍山</li>
-            <li>安庆</li>
-            <li>安阳</li>
-          </ul>
-        </div>
-        <div>
-          <h2>B</h2>
-          <ul>
-            <li>北京</li>
-            <li>保定</li>
-            <li>蚌埠</li>
-            <li>包头</li>
-          </ul>
-        </div>	
       </div>
     </div>
     <div class="city_index">
       <ul>
-        <li>A</li>
-        <li>B</li>
-        <li>C</li>
-        <li>D</li>
-        <li>E</li>
+        <li v-for="(item,index) in cityList" :key="item.index" @touchstart="handleToIndex(index)">{{item.index}}</li>
       </ul>
     </div>
   </div>
@@ -85,7 +26,66 @@
 
 <script>
 export default {
-
+  name: 'City',
+  data() {
+    return {
+      cityList: [],
+      hotList: []
+    }
+  },
+  mounted() {
+    this.axios({
+      url: 'https://m.maizuo.com/gateway?k=2919183',
+      headers: {
+        'X-Client-Info': '{"a":"3000","ch":"1002","v":"5.0.4","e":"16163307772462618283409409","bc":"150700"}',
+        'X-Host': 'mall.film-ticket.city.list'
+      }
+    }).then(res => {
+      if(res.status === 200){
+        var cities = res.data.data.cities
+        // [ { index:'A', list: [ {name: '', cityId: } ] } ]
+        var {cityList, hotList} = this.formatCityList(cities)
+        this.cityList = cityList
+        this.hotList = hotList
+      }
+    })
+  },
+  methods: {
+    handleToIndex(index){
+      var h2 = this.$refs.city_sort.getElementsByTagName('h2')
+      this.$refs.city_sort.parentNode.scrollTop = h2[index].offsetTop
+    },
+    formatCityList(cities){
+      var cityList = []
+      var hotList = []
+      for(var i = 0; i < cities.length; i++){
+        if(cities[i].isHot === 1){
+          hotList.push(cities[i])
+        }
+        var firstLetter = cities[i].pinyin[0].toUpperCase()
+        var exist = false
+        for(var j = 0; j < cityList.length; j++){
+          if(firstLetter === cityList[j].index){
+            cityList[j].list.push({name: cities[i].name, cityId: cities[i].cityId})
+            exist = true
+            break
+          }
+        }
+        if(!exist){
+          cityList.push({index: firstLetter, list: [{name: cities[i].name, cityId: cities[i].cityId}]})
+        }
+      }
+      cityList.sort((a, b) => {
+        if(a.index < b.index) return -1
+        else if(a.index > b.index) return 1
+        else return 0
+      })
+      return {
+        cityList,
+        hotList
+      }
+    }
+  }
 }
 </script>
 <style scoped lang='scss'>
